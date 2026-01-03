@@ -10,16 +10,25 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { Request, Response } from 'express';
+import { Request, Response, CookieOptions } from 'express';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { AuthGuard } from '../common/guards/auth.guard';
-import { CurrentUser, CurrentSession } from '../common/decorators/current-user.decorator';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { ApiResponse } from '../common/types/api-response.type';
-import { API_CONSTANTS } from '../common/constants/api.constants';
+
+const isProduction = process.env.NODE_ENV === 'production';
+
+const getCookieOptions = (expires: Date): CookieOptions => ({
+  httpOnly: true,
+  secure: true,
+  sameSite: isProduction ? 'none' : 'lax',
+  expires,
+  path: '/',
+});
 
 @Controller('v1/auth')
 export class AuthController {
@@ -38,14 +47,7 @@ export class AuthController {
 
     const data = await this.authService.login(dto, ipAddress, userAgent);
 
-    res.cookie('session_token', data.session.token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      expires: new Date(data.session.expires_at),
-      path: '/',
-    });
-
+    res.cookie('session_token', data.session.token, getCookieOptions(new Date(data.session.expires_at)));
     return { success: true, data };
   }
 
@@ -58,17 +60,8 @@ export class AuthController {
     const ipAddress =
       (req.headers['x-forwarded-for'] as string) || (req.headers['x-real-ip'] as string) || null;
     const userAgent = req.headers['user-agent'] || null;
-
     const data = await this.authService.register(dto, ipAddress, userAgent);
-
-    res.cookie('session_token', data.session.token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      expires: new Date(data.session.expires_at),
-      path: '/',
-    });
-
+    res.cookie('session_token', data.session.token, getCookieOptions(new Date(data.session.expires_at)));
     return { success: true, data };
   }
 
@@ -79,19 +72,10 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ): Promise<ApiResponse> {
     const sessionToken = this.extractToken(req);
-
     if (sessionToken) {
       await this.authService.logout(sessionToken);
     }
-
-    res.cookie('session_token', '', {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      expires: new Date(0),
-      path: '/',
-    });
-
+    res.cookie('session_token', '', getCookieOptions(new Date(0)));
     return { success: true, data: { message: 'Logged out successfully' } };
   }
 
@@ -128,13 +112,7 @@ export class AuthController {
       const data = await this.authService.getSession(sessionToken);
       return { success: true, data };
     } catch {
-      res.cookie('session_token', '', {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        expires: new Date(0),
-        path: '/',
-      });
+      res.cookie('session_token', '', getCookieOptions(new Date(0)));
       res.status(HttpStatus.UNAUTHORIZED);
       return { success: false, error: 'Invalid or expired session' };
     }
