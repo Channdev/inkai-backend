@@ -1,21 +1,21 @@
-import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
-import { ExpressAdapter } from '@nestjs/platform-express';
-import express from 'express';
-import { AppModule } from '../src/app.module';
+const { NestFactory } = require('@nestjs/core');
+const { ValidationPipe } = require('@nestjs/common');
+const { ExpressAdapter } = require('@nestjs/platform-express');
+const express = require('express');
 
 const server = express();
-
-const isProduction = process.env.NODE_ENV === 'production';
+let cachedApp;
 
 const allowedOrigins = [
   'http://localhost:3000',
-  'https://inkai.vercel.app',
-  'https://www.inkai.vercel.app',
+  'https://inkai-flame.vercel.app',
+  'https://www.inkai-flame.vercel.app',
   process.env.FRONTEND_URL,
 ].filter(Boolean);
 
-const bootstrap = async () => {
+async function bootstrap() {
+  const { AppModule } = require('../dist/app.module');
+
   const app = await NestFactory.create(AppModule, new ExpressAdapter(server));
 
   app.setGlobalPrefix('api');
@@ -47,13 +47,11 @@ const bootstrap = async () => {
 
   await app.init();
   return app;
-};
+}
 
-let cachedApp: any;
-
-export default async function handler(req: any, res: any) {
+module.exports = async function handler(req, res) {
   if (!cachedApp) {
     cachedApp = await bootstrap();
   }
   server(req, res);
-}
+};

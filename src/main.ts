@@ -22,8 +22,8 @@ async function bootstrap() {
 
   const allowedOrigins = [
     'http://localhost:3000',
-    'https://inkai.vercel.app',
-    'https://www.inkai.vercel.app',
+    'https://inkai-flame.vercel.app',
+    'https://www.inkai-flame.vercel.app',
     process.env.FRONTEND_URL,
   ].filter(Boolean);
 
