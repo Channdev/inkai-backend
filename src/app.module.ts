@@ -15,6 +15,7 @@ import { AiModule } from './ai/ai.module';
 import { UploadModule } from './upload/upload.module';
 import { OAuthModule } from './oauth/oauth.module';
 import { PaypalModule } from './paypal/paypal.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { PaypalModule } from './paypal/paypal.module';
     UploadModule,
     OAuthModule,
     PaypalModule,
+    AdminModule,
   ],
 })
 export class AppModule {}
